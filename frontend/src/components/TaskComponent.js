@@ -5,7 +5,7 @@ import {
 } from 'reactstrap';
 import { Control, LocalForm, Errors } from 'react-redux-form';
 
-//for validations
+//For validations
 const required = (val) => val && val.length;
 const minLength = (len) => (val) => val && (val.length >= len);
 
@@ -28,7 +28,7 @@ class Task extends Component {
         this.setState({ todoText: e.target.value });
     }
 
-    //for Adding the task
+    //For Adding the task
     onSubmitTodo = () => {
         fetch('http://localhost:3000/tasks', {
             method: 'POST',
@@ -67,9 +67,6 @@ class Task extends Component {
 
     //For deleting multiple tasks
     multiDel = () => {
-        const payload = {
-            email: this.state.email
-        }
         let selectedTask = [];
         this.state.tasks.forEach((value) => {
             if (value.selected) {
@@ -83,7 +80,7 @@ class Task extends Component {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                email: payload.email,
+                email: this.state.email,
                 tasks: selectedTask
             })
         })
