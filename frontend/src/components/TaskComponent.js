@@ -5,7 +5,7 @@ import {
 } from 'reactstrap';
 import { Control, LocalForm, Errors } from 'react-redux-form';
 
-//for validations
+//For validations
 const required = (val) => val && val.length;
 const minLength = (len) => (val) => val && (val.length >= len);
 
@@ -21,7 +21,6 @@ class Task extends Component {
             tasks: [],
             todoText: "",
         };
-        console.log("HOME PAGE", this.state.email)
     };
 
     // For todoText (textbox entry)
@@ -29,12 +28,8 @@ class Task extends Component {
         this.setState({ todoText: e.target.value });
     }
 
-    //for Adding the task
-    onSubmitTodo = (values) => {
-        const payload = {
-            email: this.state.email
-        }
-        const todoText = this.state.todoText
+    //For Adding the task
+    onSubmitTodo = () => {
         fetch('http://localhost:3000/tasks', {
             method: 'POST',
             headers: {
@@ -42,14 +37,14 @@ class Task extends Component {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                email: payload.email,
-                tasks: todoText,
+                email: this.state.email,
+                tasks: this.state.todoText,
             })
         })
             .then((response) => {
                 if (response.ok) {
                     return this.setState(({ tasks }) => ({
-                        tasks: [...tasks, { id: tasks.length, name: values.todoText, done: false }],
+                        tasks: [...tasks, { id: tasks.length, name: this.state.todoText, done: false }],
                         todoText: ""
                     }));
                 }
@@ -58,25 +53,26 @@ class Task extends Component {
             .catch(function (error) {
                 console.warn('Something went wrong', error)
             })
-
-
     };
 
 
-    //for using tasks as done or not done
+    //For using tasks as done or not done
     onChangeBox = item => {
-        console.log(item, "item")
         this.setState(({ tasks }) => ({
             tasks: tasks.map(el =>
-                el.id === item.id ? { ...el, done: !el.done } : el)
-        }));
+                el.id === item.id ? { ...el, selected: !el.selected } : el)
+        }))
     };
 
-    //for deleting selected tasks
-    handleDel = item => {
-        const payload = {
-            email: this.state.email
-        }
+
+    //For deleting multiple tasks
+    multiDel = () => {
+        let selectedTask = [];
+        this.state.tasks.forEach((value) => {
+            if (value.selected) {
+                selectedTask.push(value.id)
+            }
+        })
         fetch('http://localhost:3000/tasks', {
             method: 'DELETE',
             headers: {
@@ -84,34 +80,27 @@ class Task extends Component {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                email: payload.email,
-                tasks: [item.id]
+                email: this.state.email,
+                tasks: selectedTask
             })
         })
-
             .then((response) => {
                 if (response.ok) {
-                    return this.setState(({ tasks }) => ({
-                        tasks: tasks.filter(el => el.id !== item.id)
-                    }));
+                    this.componentDidMount();
                 }
             })
-
-
-    };
-
+    }
 
     componentDidMount() {
-        const payload = {
-            email: this.state.email
-        }
         fetch('http://localhost:3000/', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                email: this.state.email
+            })
         })
             .then(res => res.json())
             .then((data) => {
@@ -124,22 +113,19 @@ class Task extends Component {
     }
 
     render() {
-        const List = ({ list, onChangeBox, handleDel }) => (
+        const List = ({ list, onChangeBox }) => (
             <ul className='ul'>
                 {
-                    list.map((item, index) => (         //list view for todo list
-                        < li key={item.id} className="list" style={{ textDecoration: item.done ? "line-through" : null }}>
-                            <Input type="checkbox" onClick={() => onChangeBox(item)} defaultChecked={item.done} /> &nbsp;&nbsp;
-                            {item.name} &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;
-                            <span type="button" onClick={() => handleDel(item)} className="fa fa-trash-o fa-lg"></span>
+                    list.map((item) => (         //List view for todo list
+                        < li key={item.id} className="list" style={{ textDecoration: item.selected ? "line-through" : "" }}>
+                            <Input type="checkbox" onClick={() => onChangeBox(item)} defaultChecked={item.done} style={{ marginRight: 20, backgroundColor: item.selected ? "coral" : null }} />
+                            {item.name}
                         </li>
                     ))
                 }
             </ul>
         );
 
-        const { tasks, todoText } = this.state;
-        console.log(tasks, "HEllo")
         return (
             <>
                 <Navbar dark color='dark'>
@@ -151,11 +137,11 @@ class Task extends Component {
                 </Navbar>
                 <Jumbotron>
                     <div className="container">
-                        <LocalForm onSubmit={(values) => this.onSubmitTodo(values)}>
+                        <LocalForm onSubmit={this.onSubmitTodo}>
                             <Row className="form-group">
                                 <Label htmlFor="todoText" md={1}><h4>Task</h4></Label>
                                 <Col md={3}>
-                                    <Control.text model=".todoText" autoComplete="off" value={todoText}
+                                    <Control.text model=".todoText" autoComplete="off" value={this.state.todoText}
                                         onChange={this.onChangeInput}
                                         validators={{
                                             required, minLength: minLength(1)
@@ -165,8 +151,8 @@ class Task extends Component {
                                         model=".todoText"
                                         show="touched"
                                         messages={{
-                                            required: 'required',
-                                            minLength: 'Must be Greater than or equal to 1 characters'
+                                            required: '',
+                                            minLength: "Seems like you haven't entered any task"
                                         }}
                                     />
                                 </Col>
@@ -177,7 +163,8 @@ class Task extends Component {
                                 </Col>
                             </Row>
                         </LocalForm> <br />
-                        {tasks.length ? <List list={tasks} onChangeBox={this.onChangeBox} handleDel={this.handleDel} /> : <div className="heading">You don't have any pending tasks...Yay!!!</div>}
+                        {this.state.tasks.length ? <List list={this.state.tasks} onChangeBox={this.onChangeBox} handleDel={this.handleDel} /> : <div className="notask">You don't have any pending tasks...Yay!!!</div>}
+                        <Button className="biliboard" onClick={this.multiDel} style={{ border: 0 }}  >Delete Selected tasks</Button>
                     </div>
                     <div className="footer">
                         <h3 className="row justify-content-center">wanna buy us a coffee,pizza or a beer ? </h3>

@@ -1,6 +1,12 @@
 import React, { Component } from 'react';
-import { Button, FormGroup, Input, Label, Form, FormFeedback } from 'reactstrap';
+import { Button, Row, Label } from 'reactstrap';
 import '../App.css';
+import { LocalForm, Errors, Control } from 'react-redux-form';
+
+
+//For validation
+const required = (val) => val && val.length;
+const validEmail = (val) => /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(val);
 
 class Login extends Component {
 
@@ -22,9 +28,9 @@ class Login extends Component {
         this.setState({ email: e.target.value })
     }
 
-    onSubmit() {
+    onSubmit(values) {
         // Save to local storage
-        localStorage.setItem("email", this.state.email)
+        localStorage.setItem("email", values.email)
         this.props.history.push('/tasks');
     }
 
@@ -34,39 +40,32 @@ class Login extends Component {
         });
     }
 
-    validate(email) {
-        const errors = {
-            email: ''
-        };
-        if (this.state.touched.email && email.split('').filter(x => x === '@').length !== 1)
-            errors.email = 'Enter valid email';
-
-        return errors;
-    }
-
-
     render() {
-        const errors = this.validate(this.props.email)
         return (
             <div>
                 <div className="App">
                     <div className="App-header">
                         <header className="App-header">
                             <h1><span className="fa fa-tasks fa-lg"></span>  To Do List</h1> <br /> <br />
-                            <Form onSubmit={this.onSubmit}>
-                                <FormGroup className="row">
+                            <LocalForm onSubmit={(values) => this.onSubmit(values)}>
+                                <Row className="form-group">
                                     <Label htmlFor="email">Email </Label>
-                                    <Input type="text" id="email" name="email" autoComplete="off"
-                                        value={this.props.email}
-                                        valid={errors.email === ''}
-                                        invalid={errors.email !== ''}
-                                        //handleBlur={this.handleBlur("email")}
-                                        onChange={this.onChangeInput} />
-                                    <FormFeedback>{errors.email}</FormFeedback>
-                                </FormGroup>
+                                    <Control.text model=".email" autoComplete="off" className="form-control"
+                                        onChange={this.onChangeInput}
+                                        validators={{
+                                            required, validEmail
+                                        }} />
+                                    <Errors
+                                        className="text-danger" model=".email" show="touched"
+                                        messages={{
+                                            required: '',
+                                            validEmail: 'Invalid email'
+                                        }}
+                                    />
+                                </Row>
                                 <br />
-                                <Button type="submit" value="submit" color="primary">Login</Button>
-                            </Form>
+                                <Button type="submit" color="primary">Login</Button>
+                            </LocalForm>
                         </header>
                     </div>
                 </div>
